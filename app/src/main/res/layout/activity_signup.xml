@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:orientation="vertical"
+android:background="#F8DADA"
+android:padding="20dp">
+<ImageView
+    android:id="@+id/SignImage"
+    android:layout_width="300dp"
+    android:layout_height="200dp"
+    android:src="@drawable/signup"
+
+    android:layout_gravity="center_horizontal"
+    android:layout_marginTop="16dp"/>
+
+<TextView
+    android:id="@+id/titleText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Create Account"
+    android:textSize="24sp"
+    android:textStyle="bold"
+    android:textColor="#006D77"
+    android:layout_gravity="center_horizontal"
+    android:padding="16dp"/>
+
+
+<EditText
+    android:id="@+id/emailInput"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="Email"
+    android:padding="12dp"
+    android:background="@drawable/rounded_input_background"
+    android:layout_marginTop="12dp"
+    android:inputType="textEmailAddress"/>
+
+<EditText
+    android:id="@+id/passwordInput"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="Password"
+    android:padding="12dp"
+    android:background="@drawable/rounded_input_background"
+    android:layout_marginTop="12dp"
+    android:inputType="textPassword"/>
+<ProgressBar
+    android:id="@+id/progressBar"
+    android:visibility="gone"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+<Button
+    android:id="@+id/signupButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Sign Up"
+    android:background="@drawable/rounded_button_background"
+    android:textColor="#FFFFFF"
+    android:layout_marginTop="16dp"/>
+
+<TextView
+    android:id="@+id/tv_login"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal"
+    android:layout_marginTop="16dp"
+    android:onClick="onClick"
+    android:text="Already have an account? Login here."
+    android:textSize="18sp"
+    android:textColor="#3742D1"/>
+</LinearLayout>

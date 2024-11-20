@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LinearLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:orientation="vertical"
+android:background="#F8DADA"
+android:padding="20dp"
+android:gravity="center_horizontal">
+
+<ImageView
+    android:id="@+id/userImage"
+    android:layout_width="300dp"
+    android:layout_height="200dp"
+    android:src="@drawable/srcimage"
+    android:contentDescription="User Image"
+    android:layout_marginTop="16dp" />
+
+<TextView
+    android:id="@+id/manageTaskText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Manage Task"
+    android:textSize="24sp"
+    android:textColor="#006D77"
+    android:layout_marginTop="24dp" />
+
+<EditText
+    android:id="@+id/emailInput"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="Email"
+    android:padding="12dp"
+    android:background="@drawable/rounded_input_background"
+    android:layout_marginTop="12dp"
+    android:inputType="text"
+    android:importantForAccessibility="yes" />
+
+<EditText
+    android:id="@+id/passwordInput"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="Password"
+    android:padding="12dp"
+    android:background="@drawable/rounded_input_background"
+    android:layout_marginTop="12dp"
+    android:inputType="textPassword"
+    android:importantForAccessibility="yes" />
+
+<Button
+    android:id="@+id/loginButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Login"
+    android:background="@drawable/rounded_button_background"
+    android:textColor="#FFFFFF"
+    android:layout_marginTop="16dp" />
+
+<ProgressBar
+    android:id="@+id/progressBar"
+    android:visibility="gone"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    android:layout_gravity="center_horizontal" />
+
+<TextView
+    android:id="@+id/tv_signup"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Don't have an account? Sign up here."
+    android:textSize="18sp"
+    android:textColor="#3742D1"
+    android:layout_marginTop="16dp" />
+
+</LinearLayout>
+
