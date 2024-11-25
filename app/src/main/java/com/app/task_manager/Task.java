@@ -6,16 +6,19 @@ public class Task {
     private String description;
     private String priority;
     private String dueDate;
+    private String reminderDateTime; // Field to store combined date and time for reminders
     private String taskId;
 
     // Default constructor required for Firestore
     public Task() {}
 
-    public Task(String title, String description, String priority, String dueDate, String userId) {
+    // Constructor
+    public Task(String title, String description, String priority, String dueDate, String reminderDateTime, String userId) {
         this.title = title;
         this.description = description;
         this.priority = priority;
         this.dueDate = dueDate;
+        this.reminderDateTime = reminderDateTime;
         this.userId = userId; // Set userId when creating a task
     }
 
@@ -31,6 +34,9 @@ public class Task {
 
     public String getDueDate() { return dueDate; }
     public void setDueDate(String dueDate) { this.dueDate = dueDate; }
+
+    public String getReminderDateTime() { return reminderDateTime; }
+    public void setReminderDateTime(String reminderDateTime) { this.reminderDateTime = reminderDateTime; }
 
     public String getTaskId() { return taskId; }
     public void setTaskId(String taskId) { this.taskId = taskId; }

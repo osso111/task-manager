@@ -21,15 +21,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SignupActivity">
-            <!-- Additional configurations here, if necessary -->
-        </activity>
-        <activity android:name=".MainActivity">
-            <!-- Additional configurations here, if necessary -->
-        </activity>
-        <activity android:name=".TaskActivity">
-
-        </activity>
+        <activity android:name=".SignupActivity"/>
+        <activity android:name=".MainActivity"/>
+        <activity android:name=".TaskActivity"/>
     </application>
 
 </manifest>

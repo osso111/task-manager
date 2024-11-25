@@ -1,11 +1,20 @@
 package com.app.task_manager;
 
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
+import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
+
+import android.view.View;
 import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -59,6 +68,13 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
                     for (QueryDocumentSnapshot documentSnapshot : queryDocumentSnapshots) {
                         Task task = documentSnapshot.toObject(Task.class);
                         task.setTaskId(documentSnapshot.getId());
+
+                        String reminderDateTime = task.getReminderDateTime();
+                        if (TextUtils.isEmpty(reminderDateTime)) {
+                            Log.e("TaskActivity", "ReminderDateTime is null or empty for task: " + task.getTitle());
+                            continue; // Skip tasks with invalid or empty reminderDateTime
+                        }
+
                         taskList.add(task);
                     }
                     taskAdapter.notifyDataSetChanged();
@@ -68,53 +84,35 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
                 });
     }
 
-
     private void openCreateTaskDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Create New Task");
 
-        // Create a layout for the input fields
-        final EditText inputTitle = new EditText(this);
-        inputTitle.setHint("Task Title");
-        final EditText inputDescription = new EditText(this);
-        inputDescription.setHint("Task Description");
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_task, null);
+        builder.setView(dialogView);
 
-        // Priority Spinner
-        final Spinner inputPriority = new Spinner(this);
-        ArrayAdapter<String> priorityAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"Low", "Medium", "High"});
-        priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        inputPriority.setAdapter(priorityAdapter);
+        EditText inputTitle = dialogView.findViewById(R.id.inputTitle);
+        EditText inputDescription = dialogView.findViewById(R.id.inputDescription);
+        Spinner inputPriority = dialogView.findViewById(R.id.inputPriority);
+        TextView dueDateText = dialogView.findViewById(R.id.dueDateText);
+        TextView timeText = dialogView.findViewById(R.id.timeText);
 
-        final TextView dueDateText = new TextView(this);
-        dueDateText.setText("Select Due Date");
-        dueDateText.setTextSize( 20 );
+        dueDateText.setOnClickListener(v -> showDateTimePickerDialog(dueDateText, timeText));
 
-        // Date Picker for Due Date
-        dueDateText.setOnClickListener(v -> showDatePickerDialog(dueDateText));
-
-        // Arrange inputs vertically
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.addView(inputTitle);
-        layout.addView(inputDescription);
-        layout.addView(inputPriority);
-        layout.addView(dueDateText);
-
-        builder.setView(layout);
-
-        // Add buttons for dialog
         builder.setPositiveButton("Create", (dialog, which) -> {
             String title = inputTitle.getText().toString().trim();
             String description = inputDescription.getText().toString().trim();
             String priority = inputPriority.getSelectedItem().toString().trim();
             String dueDate = dueDateText.getText().toString().trim();
+            String dueTime = timeText.getText().toString().trim();
 
-            if (TextUtils.isEmpty(title) || TextUtils.isEmpty(description) || TextUtils.isEmpty(priority) || TextUtils.isEmpty(dueDate)) {
+            if (TextUtils.isEmpty(title) || TextUtils.isEmpty(description) || TextUtils.isEmpty(priority) ||
+                    TextUtils.isEmpty(dueDate) || TextUtils.isEmpty(dueTime)) {
                 Toast.makeText(TaskActivity.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            createTask(title, description, priority, dueDate);
+            createTask(title, description, priority, dueDate, dueTime);
         });
 
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
@@ -122,24 +120,29 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
         builder.show();
     }
 
-    private void showDatePickerDialog(TextView dueDateText) {
-        Calendar calendar = Calendar.getInstance();
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
+    private void showDateTimePickerDialog(TextView dueDateText, TextView timeText) {
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    String dueDate = year + "-" + (month + 1) + "-" + dayOfMonth;
+                    dueDateText.setText(dueDate);
 
-        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
-                (view, selectedYear, selectedMonth, selectedDay) -> {
-                    selectedMonth++; // Months are 0-based
-                    String selectedDate = selectedYear + "-" + selectedMonth + "-" + selectedDay;
-                    dueDateText.setText(selectedDate);
-                }, year, month, day);
+                    TimePickerDialog timePickerDialog = new TimePickerDialog(
+                            this,
+                            (view1, hourOfDay, minute) -> {
+                                String dueTime = String.format("%02d:%02d", hourOfDay, minute);
+                                timeText.setText(dueTime);
+                            },
+                            12, 0, true
+                    );
+                    timePickerDialog.show();
+                },
+                2024, 0, 1
+        );
         datePickerDialog.show();
     }
 
-    private void createTask(String taskName, String taskDescription, String taskPriority, String dueDate) {
-        Log.d("TaskActivity", "Creating task: " + taskName + " with priority: " + taskPriority + " and due date: " + dueDate);
-
+    private void createTask(String taskName, String taskDescription, String taskPriority, String dueDate, String dueTime) {
         FirebaseAuth auth = FirebaseAuth.getInstance();
         if (auth.getCurrentUser() == null) {
             Toast.makeText(this, "Please log in to create a task.", Toast.LENGTH_SHORT).show();
@@ -147,17 +150,17 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
         }
 
         String userId = auth.getCurrentUser().getUid();
-        Task newTask = new Task(taskName, taskDescription, taskPriority, dueDate, userId);
+        String reminderDateTime = dueDate + " " + dueTime;
+
+        Task newTask = new Task(taskName, taskDescription, taskPriority, dueDate, reminderDateTime, userId);
 
         db.collection("tasks")
                 .add(newTask)
                 .addOnSuccessListener(documentReference -> {
-                    Log.d("TaskActivity", "Task created successfully with ID: " + documentReference.getId());
                     Toast.makeText(TaskActivity.this, "Task created successfully", Toast.LENGTH_SHORT).show();
                     getTasks(); // Refresh tasks
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("TaskActivity", "Error creating task: " + e.getMessage(), e);
                     Toast.makeText(TaskActivity.this, "Error creating task: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
@@ -184,59 +187,60 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Edit Task");
 
-        // Create input fields pre-filled with task data
-        final EditText inputTitle = new EditText(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_task, null);
+        builder.setView(dialogView);
+
+        // Initialize the dialog components
+        EditText inputTitle = dialogView.findViewById(R.id.inputTitle);
+        EditText inputDescription = dialogView.findViewById(R.id.inputDescription);
+        Spinner inputPriority = dialogView.findViewById(R.id.inputPriority);
+        TextView dueDateText = dialogView.findViewById(R.id.dueDateText);
+        TextView timeText = dialogView.findViewById(R.id.timeText);
+
+        // Pre-fill the dialog with the task's current data
         inputTitle.setText(task.getTitle());
-        inputTitle.setHint("Task Title");
-
-        final EditText inputDescription = new EditText(this);
         inputDescription.setText(task.getDescription());
-        inputDescription.setHint("Task Description");
+        dueDateText.setText(task.getDueDate());
 
-        // Priority Spinner
-        final Spinner inputPriority = new Spinner(this);
-        ArrayAdapter<String> priorityAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, new String[]{"Low", "Medium", "High"});
-        priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        inputPriority.setAdapter(priorityAdapter);
+        // Extract the time from reminderDateTime (e.g., "2024-11-30 14:30")
+        if (!TextUtils.isEmpty(task.getReminderDateTime())) {
+            String[] dateTimeParts = task.getReminderDateTime().split(" ");
+            if (dateTimeParts.length == 2) {
+                dueDateText.setText(dateTimeParts[0]);
+                timeText.setText(dateTimeParts[1]);
+            }
+        }
 
-        // Set the spinner's current selection
-        String currentPriority = task.getPriority();
-        int priorityPosition = priorityAdapter.getPosition(currentPriority);
-        if (priorityPosition != -1) {
+        // Set the spinner to the current priority
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.task_priorities, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        inputPriority.setAdapter(adapter);
+
+        if (task.getPriority() != null) {
+            int priorityPosition = adapter.getPosition(task.getPriority());
             inputPriority.setSelection(priorityPosition);
         }
 
-        // Due Date with DatePicker
-        final TextView dueDateText = new TextView(this);
-        dueDateText.setText(task.getDueDate());
-        dueDateText.setHint("Select Due Date");
-        dueDateText.setTextSize(20);
+        // Date and time picker dialog setup
+        dueDateText.setOnClickListener(v -> showDateTimePickerDialog(dueDateText, timeText));
 
-        // Add DatePicker functionality
-        dueDateText.setOnClickListener(v -> showDatePickerDialog(dueDateText));
-
-        // Arrange inputs vertically
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.addView(inputTitle);
-        layout.addView(inputDescription);
-        layout.addView(inputPriority);
-        layout.addView(dueDateText);
-
-        builder.setView(layout);
-
+        // Handle the dialog buttons
         builder.setPositiveButton("Update", (dialog, which) -> {
             String newTitle = inputTitle.getText().toString().trim();
             String newDescription = inputDescription.getText().toString().trim();
             String newPriority = inputPriority.getSelectedItem().toString().trim();
             String newDueDate = dueDateText.getText().toString().trim();
+            String newDueTime = timeText.getText().toString().trim();
 
-            if (TextUtils.isEmpty(newTitle) || TextUtils.isEmpty(newDescription) || TextUtils.isEmpty(newPriority) || TextUtils.isEmpty(newDueDate)) {
+            // Validate input fields
+            if (TextUtils.isEmpty(newTitle) || TextUtils.isEmpty(newDescription) || TextUtils.isEmpty(newPriority) ||
+                    TextUtils.isEmpty(newDueDate) || TextUtils.isEmpty(newDueTime)) {
                 Toast.makeText(TaskActivity.this, "Please fill all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            updateTask(task.getTaskId(), newTitle, newDescription, newPriority, newDueDate);
+            // Update the task
+            updateTask(task.getTaskId(), newTitle, newDescription, newPriority, newDueDate, newDueTime);
         });
 
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
@@ -245,12 +249,15 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
     }
 
 
-    private void updateTask(String taskId, String newTitle, String newDescription, String newPriority, String newDueDate) {
+    private void updateTask(String taskId, String newTitle, String newDescription, String newPriority, String newDueDate, String newDueTime) {
+        String reminderDateTime = newDueDate + " " + newDueTime;
+
         Map<String, Object> updates = new HashMap<>();
         updates.put("title", newTitle);
         updates.put("description", newDescription);
         updates.put("priority", newPriority);
         updates.put("dueDate", newDueDate);
+        updates.put("reminderDateTime", reminderDateTime);
 
         db.collection("tasks").document(taskId)
                 .update(updates)

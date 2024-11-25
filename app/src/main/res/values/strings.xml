@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">task_manager</string>
+    <string-array name="task_priorities">
+        <item>Low</item>
+        <item>Medium</item>
+        <item>High</item>
+    </string-array>
 </resources>
