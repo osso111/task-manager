@@ -1,6 +1,7 @@
 package com.app.task_manager;
 
 public class Task {
+    private String userId;
     private String title;
     private String description;
     private String priority;
@@ -10,11 +11,12 @@ public class Task {
     // Default constructor required for Firestore
     public Task() {}
 
-    public Task(String title, String description, String priority, String dueDate) {
+    public Task(String title, String description, String priority, String dueDate, String userId) {
         this.title = title;
         this.description = description;
         this.priority = priority;
         this.dueDate = dueDate;
+        this.userId = userId; // Set userId when creating a task
     }
 
     // Getters and Setters
@@ -32,4 +34,7 @@ public class Task {
 
     public String getTaskId() { return taskId; }
     public void setTaskId(String taskId) { this.taskId = taskId; }
+
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 }

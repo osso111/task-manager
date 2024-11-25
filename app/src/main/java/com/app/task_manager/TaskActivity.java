@@ -5,27 +5,14 @@ import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import java.util.*;
+import android.widget.*;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Calendar;
 
 public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTaskActionListener {
 
@@ -56,7 +43,16 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
     }
 
     private void getTasks() {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() == null) {
+            Toast.makeText(this, "Please log in to view your tasks.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = auth.getCurrentUser().getUid();
+
         db.collection("tasks")
+                .whereEqualTo("userId", userId) // Query for tasks with the current user's ID
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     taskList.clear();
@@ -71,6 +67,7 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
                     Toast.makeText(TaskActivity.this, "Error fetching tasks: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     private void openCreateTaskDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -149,7 +146,8 @@ public class TaskActivity extends AppCompatActivity implements TaskAdapter.OnTas
             return;
         }
 
-        Task newTask = new Task(taskName, taskDescription, taskPriority, dueDate);
+        String userId = auth.getCurrentUser().getUid();
+        Task newTask = new Task(taskName, taskDescription, taskPriority, dueDate, userId);
 
         db.collection("tasks")
                 .add(newTask)
